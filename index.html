@@ -194,10 +194,14 @@ tbody td .cat-tag{display:inline-block;font-size:11px;padding:2px 8px;border-rad
 @media(max-width:768px){
   .price-grid,.stats-grid,.cat-grid,.recette-grid{grid-template-columns:1fr}
   main{padding:1rem}
-  nav{padding:0 1rem}
-  .nav-tabs{display:none}
+  nav{padding:.5rem .75rem;flex-wrap:wrap;height:auto;gap:4px}
+  .nav-tabs{order:3;width:100%;display:flex;border-top:1px solid var(--border);padding-top:6px}
+  .nav-tab{flex:1;text-align:center;font-size:11px;padding:5px 2px}
+  .nav-logo{font-size:13px}
   #config-banner{flex-direction:column;align-items:flex-start}
   #config-banner input{width:100%}
+  .form-grid{grid-template-columns:1fr}
+  .form-group.full{grid-column:1}
 }
 </style>
 </head>
@@ -698,6 +702,7 @@ function saveProduct(){
   else{products.push({id:nextId++,...data});}
   saveLocal();closeModal('modal-product');
   renderDashboard();renderStock();renderRecettes();
+  pushToSheets();
 }
 
 function deleteProduct(){
@@ -705,6 +710,7 @@ function deleteProduct(){
   products=products.filter(p=>p.id!==editingId);
   saveLocal();closeModal('modal-product');
   renderDashboard();renderStock();renderRecettes();
+  pushToSheets();
 }
 
 // ═══════════════════════════════════════
@@ -781,6 +787,7 @@ function confirmProduce(){
 
   saveLocal();closeModal('modal-produce');
   renderDashboard();renderStock();renderRecettes();
+  pushToSheets();
   alert(`✅ Production enregistrée !\n${qte} × ${rec.produit_qty} ${rec.produit_unite} de "${p.nom}" ajoutés au stock.`);
 }
 
@@ -793,18 +800,40 @@ function closeModalOutside(e,id){if(e.target.id===id)closeModal(id)}
 
 // ═══════════════════════════════════════
 // SYNC GOOGLE SHEETS
+// Toutes les requêtes passent par GET
+// pour éviter les blocages CORS
 // ═══════════════════════════════════════
 function setSyncStatus(state,label){
   document.getElementById('sync-dot').className='sync-dot'+(state!=='ok'?' '+state:'');
   document.getElementById('sync-label').textContent=label;
 }
+
+// Lecture depuis le sheet
 async function syncData(){
   if(!APPS_SCRIPT_URL){setSyncStatus('error','Sheet non configuré');return;}
   setSyncStatus('loading','Synchronisation...');
   try{
-    const res=await fetch(APPS_SCRIPT_URL+'?action=get');
+    const res=await fetch(APPS_SCRIPT_URL+'?action=get',{redirect:'follow'});
     const data=await res.json();
-    if(data&&data.products){products=data.products;saveLocal();renderDashboard();renderStock();renderRecettes();setSyncStatus('ok','Synchronisé');}
+    if(data&&data.products){
+      products=data.products;
+      saveLocal();
+      renderDashboard();renderStock();renderRecettes();
+      setSyncStatus('ok','Synchronisé');
+    }else{setSyncStatus('error','Données invalides');}
+  }catch(e){setSyncStatus('error','Erreur de connexion');}
+}
+
+// Envoi vers le sheet via GET (évite CORS)
+async function pushToSheets(){
+  if(!APPS_SCRIPT_URL)return;
+  setSyncStatus('loading','Enregistrement...');
+  try{
+    const encoded=encodeURIComponent(JSON.stringify(products));
+    const res=await fetch(`${APPS_SCRIPT_URL}?action=save&products=${encoded}`,{redirect:'follow'});
+    const data=await res.json();
+    if(data&&data.success){setSyncStatus('ok','Enregistré ✓');}
+    else{setSyncStatus('error','Erreur sauvegarde');}
   }catch(e){setSyncStatus('error','Erreur de connexion');}
 }
 
@@ -813,6 +842,8 @@ async function syncData(){
 // ═══════════════════════════════════════
 document.getElementById('sheet-url-input').value=APPS_SCRIPT_URL;
 renderDashboard();
+// Sync automatique au chargement si URL configurée
+if(APPS_SCRIPT_URL)syncData();
 </script>
 </body>
 </html>
