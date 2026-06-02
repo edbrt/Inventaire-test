@@ -276,18 +276,6 @@ tbody td.mono{font-family:var(--mono);font-size:12px}
     <button class="nav-tab" onclick="showPage('recettes',this)">🧪 Recettes</button>
     <button class="nav-tab" onclick="showPage('achats',this)" id="tab-achats">🛒 Achats</button>
     <button class="nav-tab" onclick="showPage('ventes',this)" id="tab-ventes">💰 Ventes</button>
-    <button class="nav-tab" onclick="showPage('users',this)" id="tab-users">👥 Utilisateurs</button>
-  </div>
-  <div class="nav-right">
-    <div class="sync-status"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">Prêt</span></div>
-    <div class="user-badge">
-      <div class="user-avatar" id="nav-avatar">?</div>
-      <div>
-        <div style="font-size:12px;font-weight:500" id="nav-username">—</div>
-        <div class="role-tag" id="nav-role">—</div>
-      </div>
-    </div>
-    <button class="btn-logout" onclick="doLogout()">Déconnexion</button>
   </div>
 </nav>
 
@@ -377,26 +365,6 @@ tbody td.mono{font-family:var(--mono);font-size:12px}
     <table><thead><tr><th>Date</th><th>Événement</th><th>Produit</th><th>Qté</th><th>Prix unit.</th><th>Total</th><th>Par</th></tr></thead>
     <tbody id="ventes-tbody"></tbody></table>
   </div>
-</div>
-
-<!-- ══ UTILISATEURS ══ -->
-<div class="page" id="page-users">
-  <div class="page-header">
-    <div><h2>Gestion des utilisateurs</h2><p>Gérez les accès et les rôles de votre équipe</p></div>
-    <div class="page-header-actions"><button class="btn btn-primary" onclick="openUserModal()">+ Ajouter un utilisateur</button></div>
-  </div>
-  <div class="user-list" id="user-list"></div>
-  <div style="margin-top:1.5rem;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem">
-    <p class="section-title">Rôles et permissions</p>
-    <table><thead><tr><th>Rôle</th><th>Stock</th><th>Achats</th><th>Ventes</th><th>Recettes</th><th>Utilisateurs</th></tr></thead>
-    <tbody>
-      <tr><td><span class="badge rb-admin">Admin</span></td><td>✅ Modifier</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
-      <tr><td><span class="badge rb-vendeur">Vendeur</span></td><td>👁 Voir</td><td>✅</td><td>✅</td><td>👁 Voir</td><td>❌</td></tr>
-      <tr><td><span class="badge rb-lecteur">Lecteur</span></td><td>👁 Voir</td><td>❌</td><td>❌</td><td>👁 Voir</td><td>❌</td></tr>
-    </tbody></table>
-  </div>
-</div>
-</main>
 </div>
 
 <!-- ══ MODALS ══ -->
@@ -522,38 +490,6 @@ tbody td.mono{font-family:var(--mono);font-size:12px}
   </div>
 </div>
 
-<!-- Utilisateur -->
-<div class="modal-overlay" id="modal-user" onclick="closeModalOutside(event,'modal-user')">
-  <div class="modal" style="max-width:440px">
-    <div class="modal-header"><h3 id="modal-user-title">Ajouter un utilisateur</h3><button class="modal-close" onclick="closeModal('modal-user')">✕</button></div>
-    <div class="modal-body">
-      <div class="form-grid">
-        <div class="form-group full"><label>Nom d'utilisateur *</label><input type="text" id="u-name" placeholder="Ex: alice"></div>
-        <div class="form-group full"><label>Mot de passe *</label><input type="password" id="u-pass" placeholder="••••••••"></div>
-        <div class="form-group full"><label>Rôle *</label>
-          <select id="u-role">
-            <option value="lecteur">Lecteur — consultation uniquement</option>
-            <option value="vendeur">Vendeur — achats & ventes</option>
-            <option value="admin">Admin — accès total</option>
-          </select>
-        </div>
-        <div class="form-group full"><label>Couleur avatar</label>
-          <select id="u-color">
-            <option value="#4f8ef7">Bleu</option><option value="#34d399">Vert</option>
-            <option value="#a78bfa">Violet</option><option value="#f87171">Rouge</option>
-            <option value="#fbbf24">Orange</option><option value="#fb923c">Amber</option>
-          </select>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('modal-user')">Annuler</button>
-      <button class="btn btn-danger btn-sm" id="btn-delete-user" onclick="deleteUser()" style="display:none">Supprimer</button>
-      <button class="btn btn-primary" onclick="saveUser()">Enregistrer</button>
-    </div>
-  </div>
-</div>
-
 <script>
 // ══════════════════════════════════════════
 // CONSTANTES
@@ -570,11 +506,10 @@ let APPS_SCRIPT_URL = localStorage.getItem('apps_script_url')||'';
 let currentUser = null;
 let editingProductId = null;
 let producingId = null;
-let editingUserId = null;
 let nextProductId = 1;
 
-// Utilisateurs (stockés localement, admin peut les gérer)
-let users = JSON.parse(localStorage.getItem('users')||'null') || [
+// Utilisateurs 
+const users = [
   {id:1,name:'admin',pass:'admin123',role:'admin',color:'#f87171'},
   {id:2,name:'vendeur1',pass:'vente123',role:'vendeur',color:'#4f8ef7'},
   {id:3,name:'lecteur1',pass:'lire123',role:'lecteur',color:'#34d399'},
@@ -615,7 +550,6 @@ function saveLocal(){
   localStorage.setItem('products',JSON.stringify(products));
   localStorage.setItem('achats',JSON.stringify(achats));
   localStorage.setItem('ventes',JSON.stringify(ventes));
-  localStorage.setItem('users',JSON.stringify(users));
 }
 function saveConfig(){APPS_SCRIPT_URL=document.getElementById('sheet-url-input').value.trim();localStorage.setItem('apps_script_url',APPS_SCRIPT_URL);}
 function computeCost(p){
@@ -629,7 +563,6 @@ function canDo(action){
   const r=currentUser.role;
   if(action==='edit_stock')return r==='admin';
   if(action==='achat'||action==='vente')return r==='admin'||r==='vendeur';
-  if(action==='manage_users')return r==='admin';
   return true;
 }
 
@@ -665,7 +598,6 @@ function applyPermissions(){
   // Onglets
   document.getElementById('tab-achats').classList.toggle('disabled',!canDo('achat'));
   document.getElementById('tab-ventes').classList.toggle('disabled',!canDo('vente'));
-  document.getElementById('tab-users').classList.toggle('disabled',!canDo('manage_users'));
   // Bouton ajouter stock
   const btn=document.getElementById('btn-add-product');
   if(btn)btn.style.display=canDo('edit_stock')?'':'none';
@@ -677,7 +609,6 @@ function applyPermissions(){
 function showPage(name,btn){
   if(name==='achats'&&!canDo('achat'))return;
   if(name==='ventes'&&!canDo('vente'))return;
-  if(name==='users'&&!canDo('manage_users'))return;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
@@ -687,7 +618,6 @@ function showPage(name,btn){
   if(name==='recettes')renderRecettes();
   if(name==='achats')renderAchats();
   if(name==='ventes')renderVentes();
-  if(name==='users')renderUsers();
 }
 
 // ══════════════════════════════════════════
@@ -1043,47 +973,6 @@ function renderVentes(){
     <td class="mono" style="color:var(--sell)">${fmt(v.total)}</td>
     <td style="font-size:12px;color:var(--muted)">${v.par||'—'}</td>
   </tr>`).join('');
-}
-
-// ══════════════════════════════════════════
-// UTILISATEURS
-// ══════════════════════════════════════════
-function renderUsers(){
-  document.getElementById('user-list').innerHTML=users.map(u=>`<div class="user-row">
-    <div class="ua" style="background:${u.color||'#4f8ef7'}">${u.name[0].toUpperCase()}</div>
-    <div class="ui"><div class="un">${u.name}</div><div class="ur">Mot de passe : ${'•'.repeat(u.pass.length)}</div></div>
-    <span class="role-badge ${ROLE_COLORS[u.role]}">${ROLE_LABELS[u.role]}</span>
-    ${u.name!=='admin'?`<button class="btn btn-ghost btn-sm" onclick="openUserModal(${u.id})">✏️</button>`:''}
-  </div>`).join('');
-}
-function openUserModal(id){
-  const u=id?users.find(x=>x.id===id):null;
-  editingUserId=u?u.id:null;
-  document.getElementById('modal-user-title').textContent=u?'Modifier l\'utilisateur':'Ajouter un utilisateur';
-  document.getElementById('btn-delete-user').style.display=(u&&u.name!=='admin')?'block':'none';
-  document.getElementById('u-name').value=u?.name||'';
-  document.getElementById('u-pass').value=u?.pass||'';
-  document.getElementById('u-role').value=u?.role||'lecteur';
-  document.getElementById('u-color').value=u?.color||'#4f8ef7';
-  openModal('modal-user');
-}
-function saveUser(){
-  const name=document.getElementById('u-name').value.trim().toLowerCase();
-  const pass=document.getElementById('u-pass').value;
-  const role=document.getElementById('u-role').value;
-  const color=document.getElementById('u-color').value;
-  if(!name||!pass){alert('Remplissez tous les champs.');return;}
-  if(editingUserId){const i=users.findIndex(u=>u.id===editingUserId);users[i]={...users[i],name,pass,role,color};}
-  else{
-    if(users.find(u=>u.name===name)){alert('Ce nom d\'utilisateur existe déjà.');return;}
-    users.push({id:Date.now(),name,pass,role,color});
-  }
-  saveLocal();closeModal('modal-user');renderUsers();
-}
-function deleteUser(){
-  if(!confirm('Supprimer cet utilisateur ?'))return;
-  users=users.filter(u=>u.id!==editingUserId);
-  saveLocal();closeModal('modal-user');renderUsers();
 }
 
 // ══════════════════════════════════════════
