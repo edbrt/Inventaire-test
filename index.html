@@ -280,11 +280,6 @@ tbody td.mono{font-family:var(--mono);font-size:12px}
 </nav>
 
 <main>
-<div id="config-banner">
-  <div style="font-size:20px">⚙️</div>
-  <p><strong>Google Sheets</strong> — Collez l'URL Apps Script pour synchroniser.</p>
-  <input type="text" id="sheet-url-input" placeholder="https://script.google.com/macros/s/.../exec" oninput="saveConfig()">
-</div>
 
 <!-- ══ DASHBOARD ══ -->
 <div class="page active" id="page-dashboard">
@@ -502,7 +497,7 @@ const AVATARS_COLORS=['#4f8ef7','#34d399','#a78bfa','#f87171','#fbbf24','#fb923c
 // ══════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════
-let APPS_SCRIPT_URL = localStorage.getItem('apps_script_url')||'';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyzt-UsR4ml4OUbI1VFzGIRBji40KzNp8dyhs4OWqe18ycMLquKt_aaCrmYcWaQkXvp/exec';
 let currentUser = null;
 let editingProductId = null;
 let producingId = null;
@@ -551,7 +546,6 @@ function saveLocal(){
   localStorage.setItem('achats',JSON.stringify(achats));
   localStorage.setItem('ventes',JSON.stringify(ventes));
 }
-function saveConfig(){APPS_SCRIPT_URL=document.getElementById('sheet-url-input').value.trim();localStorage.setItem('apps_script_url',APPS_SCRIPT_URL);}
 function computeCost(p){
   if(!p.recette||!p.recette.ingredients||!p.recette.ingredients.length)return p.achat||0;
   let t=0;p.recette.ingredients.forEach(i=>{const mp=products.find(x=>x.id===i.product_id);if(mp)t+=i.qty*(mp.achat||0);});
@@ -582,7 +576,6 @@ function doLogin(){
   document.getElementById('nav-avatar').textContent=u.name[0].toUpperCase();
   document.getElementById('nav-avatar').style.background=u.color||'#4f8ef7';
   applyPermissions();
-  document.getElementById('sheet-url-input').value=APPS_SCRIPT_URL;
   renderDashboard();
   if(APPS_SCRIPT_URL)syncData();
 }
